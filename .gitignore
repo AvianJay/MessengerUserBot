@@ -192,3 +192,20 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# bot things
+config.json
+cookies.pkl
+cookies_facebook.pkl
+.webhook.secret
+messagelog.json
+Quote_Temp_Download.jpg
+chromedriver.exe
+.cache.json
+HanlinQT.html
+messenger_quote.png
+picture_caches/
+
+# g4f
+har_and_cookies/
+generated_media/

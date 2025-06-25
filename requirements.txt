@@ -1,0 +1,4 @@
+selenium
+g4f
+requests
+flask
