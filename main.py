@@ -590,6 +590,11 @@ def checkmsg(message: MessengerMessage):
             text.append("!r34 [**tags] (page=頁數) - r34 muhehehe")
             text.append("!r34tag [query] - r34 tags search")
             text.append('!about - 關於')
+            if message.sender.id == config["owner_id"]:
+                text.append('')
+                text.append('管理員指令：')
+                text.append('!denyuser [使用者ID/回覆的訊息] - 禁止使用者使用指令')
+                text.append('!shutdown - 關閉機器人')
             returnvalue = text
         elif msg[0] == '!getnanians':
             if msg[1]:
@@ -695,6 +700,7 @@ def checkmsg(message: MessengerMessage):
             returnvalue.append('更新dsize指令')
             returnvalue.append('更新webdriver-manager')
             returnvalue.append('現可禁止使用者使用指令')
+            returnvalue.append('現可使用指令關閉機器人')
         elif msg[0] == '!dsize':
             returnvalue = dsize(message.sender)
         elif msg[0] == '!miq':
@@ -739,6 +745,14 @@ def checkmsg(message: MessengerMessage):
                     returnvalue = [f"{msg[1]} 已被{seted}使用指令"]
                 else:
                     returnvalue = ["用法：!denyuser [使用者ID/回覆的訊息]"]
+            else:
+                returnvalue = ["你沒有權限使用這個指令。"]
+        elif msg[0] == '!shutdown':
+            if message.sender.id == config["owner_id"]:
+                returnvalue = ["正在關閉機器人..."]
+                sendmsg(returnvalue)
+                driver.quit()
+                sys.exit(0)
             else:
                 returnvalue = ["你沒有權限使用這個指令。"]
         else:
