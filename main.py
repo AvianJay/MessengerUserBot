@@ -723,21 +723,24 @@ def checkmsg(message: MessengerMessage):
                 returnvalue.append(f"ID：{replydict['id']}")
                 returnvalue.append(f"頭像：{config['public_url']}{replydict['avatar']}")
         elif msg[0] == '!deny':
-            if reply:
-                if reply.sender.id:
-                    if not len(msg) == 2 and msg[1] == "c":
-                        denyuser(reply.sender.id, "s")
-                    seted = "禁止" if denyuser(reply.sender.id, "c") else "允許"
-                    returnvalue = [f"{reply.sender.id} 已被{seted}使用指令"]
+            if message.sender.id == config["owner_id"]:
+                if reply:
+                    if reply.sender.id:
+                        if not len(msg) == 2 and msg[1] == "c":
+                            denyuser(reply.sender.id, "s")
+                        seted = "禁止" if denyuser(reply.sender.id, "c") else "允許"
+                        returnvalue = [f"{reply.sender.id} 已被{seted}使用指令"]
+                    else:
+                        returnvalue = ["回覆的訊息沒有使用者ID。"]
+                elif len(msg) >= 2:
+                    if not len(msg) == 3 and msg[2] == "c":
+                        denyuser(msg[1], "s")
+                    seted = "禁止" if denyuser(msg[1], "c") else "允許"
+                    returnvalue = [f"{msg[1]} 已被{seted}使用指令"]
                 else:
-                    returnvalue = ["回覆的訊息沒有使用者ID。"]
-            elif len(msg) >= 2:
-                if not len(msg) == 3 and msg[2] == "c":
-                    denyuser(msg[1], "s")
-                seted = "禁止" if denyuser(msg[1], "c") else "允許"
-                returnvalue = [f"{msg[1]} 已被{seted}使用指令"]
+                    returnvalue = ["用法：!denyuser [使用者ID/回覆的訊息]"]
             else:
-                returnvalue = ["用法：!denyuser [使用者ID/回覆的訊息]"]
+                returnvalue = ["你沒有權限使用這個指令。"]
         else:
             returnvalue = ["傻逼我看不懂你的指令"]
     elif msg[0].startswith("！"):
