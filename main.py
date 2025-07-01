@@ -24,7 +24,7 @@ import hashlib
 from g4f.client import Client
 gptClient = Client()
 
-config_version = 5
+config_version = 6
 bot_version = "0.9 Beta"
 
 qwerty_to_bopomofo = {
@@ -63,6 +63,7 @@ default_config = {
     "public_url": "http://example.com:3000/",
     "use_wdm": True,
     "server_port": 3000,
+    "adult_content": False,
 }
 config_path = "config.json"
 config = None
@@ -587,8 +588,10 @@ def checkmsg(message: MessengerMessage):
             text.append('!gptimage [**提示] - AI生圖')
             text.append('!2zhuyin [字串 or 回覆] - 沒切輸入法')
             text.append('!userinfo [回覆] - 使用者資訊')
-            text.append("!r34 [**tags] (page=頁數) - r34 muhehehe")
-            text.append("!r34tag [query] - r34 tags search")
+            text.append('!webhook - 查看Webhook資訊')
+            if config["adult_content"]:
+                text.append("!r34 [**tags] (page=頁數) - r34 muhehehe")
+                text.append("!r34tag [query] - r34 tags search")
             text.append('!about - 關於')
             if message.sender.id == config["owner_id"]:
                 text.append('')
@@ -653,41 +656,47 @@ def checkmsg(message: MessengerMessage):
             else:
                 returnvalue = ['用法：!gptimage [**提示]']
         elif msg[0] == '!r34':
-            if len(msg) == 2:
-                if 'page=' in msg[1]:
-                    pid = msg[1].split('page=')[1]
-                    returnvalue = []
-                    returnvalue.append(r34(pid=pid))
-                else:
-                    returnvalue = []
-                    returnvalue.append(r34(msg[1]))
-            elif len(msg) > 2:
-                c = None
-                r34tag = None
-                pid = 1
-                returnvalue = ['']
-                for m in msg:
-                    if c is not None:
-                        if 'page=' in m:
-                            pid = m.split('page=')[1]
-                        else:
-                            if not r34tag:
-                                r34tag = m
-                            else:
-                                r34tag = r34tag + '%20' + m
+            if config["adult_content"]:
+                if len(msg) == 2:
+                    if 'page=' in msg[1]:
+                        pid = msg[1].split('page=')[1]
+                        returnvalue = []
+                        returnvalue.append(r34(pid=pid))
                     else:
-                        c = True
-                returnvalue.append(r34(r34tag))
+                        returnvalue = []
+                        returnvalue.append(r34(msg[1]))
+                elif len(msg) > 2:
+                    c = None
+                    r34tag = None
+                    pid = 1
+                    returnvalue = ['']
+                    for m in msg:
+                        if c is not None:
+                            if 'page=' in m:
+                                pid = m.split('page=')[1]
+                            else:
+                                if not r34tag:
+                                    r34tag = m
+                                else:
+                                    r34tag = r34tag + '%20' + m
+                        else:
+                            c = True
+                    returnvalue.append(r34(r34tag))
+                else:
+                    returnvalue = [r34()]
             else:
-                returnvalue = [r34()]
+                returnvalue = ["這個指令需要開啟成人內容。"]
         elif msg[0] == '!r34tag':
-            if len(msg) == 2:
-                returnvalue = []
-                returnvalue.append(r34tags(msg[1]))
-            elif len(msg) > 2:
-                returnvalue = '僅限1個！'
+            if config["adult_content"]:
+                if len(msg) == 2:
+                    returnvalue = []
+                    returnvalue.append(r34tags(msg[1]))
+                elif len(msg) > 2:
+                    returnvalue = '僅限1個！'
+                else:
+                    returnvalue = [r34tags()]
             else:
-                returnvalue = [r34tags()]
+                returnvalue = ["這個指令需要開啟成人內容。"]
         elif msg[0] == '!about':
             returnvalue = []
             returnvalue.append('Messenger Bot v' + str(bot_version))
@@ -701,6 +710,7 @@ def checkmsg(message: MessengerMessage):
             returnvalue.append('更新webdriver-manager')
             returnvalue.append('現可禁止使用者使用指令')
             returnvalue.append('現可使用指令關閉機器人')
+            returnvalue.append('現可限制成人內容')
         elif msg[0] == '!dsize':
             returnvalue = dsize(message.sender)
         elif msg[0] == '!miq':
@@ -755,6 +765,12 @@ def checkmsg(message: MessengerMessage):
                 sys.exit(0)
             else:
                 returnvalue = ["你沒有權限使用這個指令。"]
+        elif msg[0] == '!webhook':
+            webhook_url = config.get("public_url", "http://example.com:3000/") + server.secret
+            returnvalue = [f"Webhook URL: {webhook_url}"]
+            returnvalue.append("支持的Webhook類型：")
+            returnvalue.append("discord, slack, github")
+            returnvalue.append("只需在Webhook URL後面加上類型即可，例如：/discord")
         else:
             returnvalue = ["傻逼我看不懂你的指令"]
     elif msg[0].startswith("！"):
