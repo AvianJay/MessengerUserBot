@@ -722,7 +722,7 @@ def checkmsg(message: MessengerMessage):
                 returnvalue.append(f"名稱：{replydict['name']}")
                 returnvalue.append(f"ID：{replydict['id']}")
                 returnvalue.append(f"頭像：{config['public_url']}{replydict['avatar']}")
-        elif msg[0] == '!denyuser':
+        elif msg[0] == '!deny':
             if reply:
                 if reply.sender.id:
                     if not len(msg) == 2 and msg[1] == "c":
