@@ -2,3 +2,4 @@ selenium
 g4f
 requests
 flask
+webdriver-manager

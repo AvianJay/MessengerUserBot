@@ -24,7 +24,8 @@ import hashlib
 from g4f.client import Client
 gptClient = Client()
 
-config_version = 3
+config_version = 5
+bot_version = "0.9 Beta"
 
 qwerty_to_bopomofo = {
     # 聲母/韻母（符號區）
@@ -58,6 +59,10 @@ default_config = {
     # "graph_token": "",
     "sync_cookies": True,
     "sync_cookies_duration": 5,
+    "owner_id": 0,
+    "public_url": "http://example.com:3000/",
+    "use_wdm": True,
+    "server_port": 3000,
 }
 config_path = "config.json"
 config = None
@@ -102,8 +107,71 @@ opt.add_argument("--disable-accelerated-video")
 opt.add_argument("--disable-accelerated-video-encode")
 if config['headless']:
     opt.add_argument("--headless")
-driver = webdriver.Chrome(options=opt)
 
+if config.get("use_wdm", True):
+    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=opt)
+else:
+    driver = webdriver.Chrome(options=opt)
+
+class MessengerUser(object):
+    def __init__(self, name, avatar, id):
+        self.name = name
+        self.avatar = avatar
+        self.id = id
+
+    def __str__(self):
+        return f"{self.name} ({self.id})"
+
+    def __repr__(self):
+        return f"MessengerUser(name={self.name}, avatar={self.avatar}, id={self.id})"
+    
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "avatar": self.avatar,
+            "id": self.id
+        }
+    
+    def is_self(self):
+        return self.id == 0
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            name=data.get("name"),
+            avatar=data.get("avatar"),
+            id=data.get("id")
+        )
+
+class MessengerMessage(object):
+    def __init__(self, sender: MessengerUser, message, time=datetime.now().timestamp(), reply=None):
+        self.sender = sender
+        self.message = message
+        self.time = time
+        self.reply = reply
+
+    def __str__(self):
+        reply_str = f" (reply to {self.reply.sender})" if self.reply else ""
+        return f"{self.sender} : {self.message} at {self.time}{reply_str}"
+
+    def __repr__(self):
+        return f"MessengerMessage(sender={repr(self.sender)}, message={self.message}, time={self.time}, reply={repr(self.reply)})"
+    
+    def to_dict(self):
+        return {
+            "sender": self.sender.to_dict(),
+            "message": self.message,
+            "time": self.time,
+            "reply": self.reply.to_dict() if self.reply else None
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        sender = MessengerUser.from_dict(data["sender"])
+        message = data["message"]
+        time_val = data.get("time", datetime.now().timestamp())
+        reply = cls.from_dict(data["reply"]) if data.get("reply") else None
+        return cls(sender, message, time_val, reply)
 
 def login():
     print('Try to login...')
@@ -354,7 +422,7 @@ def web_get_user_picture(id, hash):
             mjson['messages'] = []
         for msg in mjson["messages"]:
             for i, h in caches.items():
-                msg["senderpicture"] = msg["senderpicture"].replace(h, i)
+                msg["sender"]["avatar"] = msg["sender"]["avatar"].replace(h, i)
         with open('messagelog.json', 'w') as f:
             f.write(json.dumps(mjson))
         print("Finished.")
@@ -375,6 +443,7 @@ def get_user_picture(id, orig):
     # res = requests.get(f"https://graph.facebook.com/{id}?fields=picture.width(720).height(720)&redirect=false&access_token={config["graph_token"]}").json()
     # if res.get("picture"):
     #     return res.get("picture", {}).get("data", {}).get("url", None)
+    id = str(id)
     caches = cache("highqsave", default={})
     if picture_caches.get(orig):
         with open(os.path.join("picture_caches", f"{picture_caches[orig]}.jpg"), "rb") as f:
@@ -470,9 +539,12 @@ def cache_picture(url):
 
 bopomofo_set = set(qwerty_to_bopomofo.values())
 
-def checkmsg(msg, sender, senderinfo, reply):
+def checkmsg(message: MessengerMessage):
     returnvalue = None
-    if not sender: return
+    is_self = message.sender.is_self()
+    if is_self: return
+    msg = message.message.strip().split()
+    reply = message.reply
     # print('Checking message ' + str(msg))
     if msg[0].startswith('!'):
         print('Checking message ' + msg[0])
@@ -497,7 +569,7 @@ def checkmsg(msg, sender, senderinfo, reply):
         #         text = ['沒作業']
         #     returnvalue = text
         elif msg[0] == '!log':
-            text = ['http://ip.avianjay.sbs:3000/']
+            text = [config["public_url"]]
             returnvalue = text
         elif msg[0] == '!help':
             text = []
@@ -514,6 +586,7 @@ def checkmsg(msg, sender, senderinfo, reply):
             text.append('!gptsearch [文字] - 有搜尋功能的GPT')
             text.append('!gptimage [**提示] - AI生圖')
             text.append('!2zhuyin [字串 or 回覆] - 沒切輸入法')
+            text.append('!userinfo [回覆] - 使用者資訊')
             text.append("!r34 [**tags] (page=頁數) - r34 muhehehe")
             text.append("!r34tag [query] - r34 tags search")
             text.append('!about - 關於')
@@ -612,20 +685,20 @@ def checkmsg(msg, sender, senderinfo, reply):
                 returnvalue = [r34tags()]
         elif msg[0] == '!about':
             returnvalue = []
-            returnvalue.append('Messenger Bot v0.89 Beta')
+            returnvalue.append('Messenger Bot v' + str(bot_version))
             returnvalue.append('by AvianJay')
             returnvalue.append('本次更新：')
             returnvalue.append('AutoReply更新')
-            returnvalue.append('改使用元素ID檢查重複訊息')
             returnvalue.append('更多敷衍')
+            returnvalue.append('資料處理更新')
+            returnvalue.append('新增userinfo指令')
+            returnvalue.append('更新dsize指令')
+            returnvalue.append('更新webdriver-manager')
         elif msg[0] == '!dsize':
-            returnvalue = dsize(senderinfo)
+            returnvalue = dsize(message.sender)
         elif msg[0] == '!miq':
-            if reply[0]:
-                if reply[1]:
-                    fn = quote.create(reply[2], reply[0], reply[1])
-                else:
-                    fn = quote.create("https://avianjay.sbs/mr.jpg", reply[0], "不知道是誰")
+            if reply:
+                fn = quote.create(reply.sender.avatar, reply.message, reply.sender.name)
                 sendimage(fn)
             else:
                 returnvalue = ["找不到已回覆的訊息。"]
@@ -636,54 +709,71 @@ def checkmsg(msg, sender, senderinfo, reply):
                 returnvalue = toZhuyin(msg[1])
             else:
                 returnvalue = ["傻逼沒東西"]
+        elif msg[0] == '!userinfo':
+            senderdict = message.sender.to_dict()
+            returnvalue = ["用戶資訊："]
+            returnvalue.append(f"名稱：{senderdict['name']}")
+            returnvalue.append(f"ID：{senderdict['id']}")
+            returnvalue.append(f"頭像：{config['public_url']}{senderdict['avatar']}")
+            if message.reply:
+                replydict = message.reply.sender.to_dict()
+                returnvalue.append("回覆的訊息：")
+                returnvalue.append(f"名稱：{replydict['name']}")
+                returnvalue.append(f"ID：{replydict['id']}")
+                returnvalue.append(f"頭像：{config['public_url']}{replydict['avatar']}")
         else:
             returnvalue = ["傻逼我看不懂你的指令"]
     elif msg[0].startswith("！"):
         returnvalue = ['用半形!傻逼']
     # lol autoreply
     elif msg[0].lower() in ["好", "好。", "cl3", "👌", "👍", "。"]:
-        returnvalue = ['好。'] if sender else None
-    elif msg[0].lower() in ["好你嗎", "好你媽", "好三小", "好你媽啦", "好你碼", "好你妹", "好你老師", "好你爸", "好你爸啦", "好你媽啦", "好你妹啦", "好你老師啦", "好你碼啦"]:
-        returnvalue = ['我做錯了嗎(⁠´⁠；⁠ω⁠；⁠｀⁠)'] if sender else None
+        returnvalue = ['好。'] if is_self else None
+    elif msg[0].lower() in ["好你嗎", "好你媽", "好三小", "好你媽啦", "好你碼", "好你妹", "好你老師", "好你爸", "好你爸啦", "好你媽啦", "好你妹啦", "好你老師啦", "好你碼啦", "行你媽", "行你嗎", "行三小", "行你媽啦", "行你碼", "行你妹", "行你老師", "行你爸", "行你爸啦", "行你媽啦", "行你妹啦", "行你老師啦", "行你碼啦", "哭三小", "哭你媽", "哭你嗎", "哭你妹", "哭你老師", "哭你爸", "哭你媽啦", "哭你妹啦", "哭你老師啦", "哭你爸啦"]:
+        returnvalue = ['我做錯了嗎(⁠´⁠；⁠ω⁠；⁠｀⁠)'] if is_self else None
     elif msg[0].lower() in ["行", "說幹就幹", "好吧", "vu/6", "vu/", "vu/6行", "vu/6好吧", "vu/6說幹就幹", "行吧", "行。", "行了", "行了嗎", "行了嗎？"]:
-        returnvalue = ['行吧。'] if sender else None
-    elif msg[0].lower() in ["幹", "乾", "靠北", "靠杯", "操", "噁", "呃", "崩潰", "fk", "fuck", "fucking", "fucking hell", "fucking", "e04", "靠北啊", "靠北阿", "靠杯啊", "靠杯阿"]:
-        returnvalue = [random.choice(['你壞壞 不可以這樣', "我要跟老師講", "到底 都你在搞", "就你在搞", "就{random}在搞", "在哭", "。", "好啦好啦"])] if sender else None
+        returnvalue = ['行吧。'] if is_self else None
+    elif msg[0].lower() in ["幹", "乾", "靠北", "靠杯", "操", "呃", "崩潰", "fk", "fuck", "fucking", "fucking hell", "fucking", "e04", "靠北啊", "靠北阿", "靠杯啊", "靠杯阿", "媽的", "媽的啊", "媽的阿", "媽的啦", "媽的啦啊", "媽的啦阿", "媽的啦啊阿", "媽的啦啊阿啊", "幹你娘", "幹你娘啊", "幹你娘阿", "幹你娘啦", "幹你娘啦啊", "幹你娘啦阿", "幹你娘啦啊阿", "幹你娘啦啊阿啊", "幹你娘啦啊阿啊啊", "幹你娘啦啊阿啊啊啊", "幹你娘啦啊阿啊啊啊啊", "幹你娘啦啊阿啊啊啊啊啊", "幹你娘啦啊阿啊啊啊啊啊啊", "幹你娘啦啊阿啊啊啊啊啊阿", "幹你娘啦啊阿啊啊啊啊阿", "幹你娘啦阿", "操你媽", "操你媽啊", "操你媽阿", "操你媽啦", "操你媽啦啊", "操你媽啦阿", "操你媽啦啊阿", "操你媽啦啊阿啊", "操你媽啦啊阿啊啊", "操你媽啦啊阿啊啊啊", "操你媽啦啊阿啊啊啊啊", "操你媽啦啊阿啊啊啊啊啊", "操你媽啦啊阿啊啊啊啊阿", "操你媽啦啊阿啊啊啊阿", "操你媽啦阿", "操你媽啦啊", "操你媽啦啊阿", "操你媽啦啊阿啊", "操你媽啦啊阿啊啊", "操你媽啦啊阿啊啊啊", "操你媽啦啊阿啊啊啊啊", "操你媽啦啊阿啊啊啊啊阿", "操你媽啦啊阿啊啊啊阿"]:
+        returnvalue = [random.choice(['你壞壞 不可以這樣', "我要跟老師講", "到底 都你在搞", "就你在搞", "就{random}在搞", "在哭", "。", "好啦好啦"])] if is_self else None
 
-    elif msg[0] in ["笑死", "xd", "XD", "XDDD", "xdxd", "🤣", "哈哈", "哈哈哈"]:
-        returnvalue = [random.choice(['你很快樂欸', "笑死", "好好笑", "超好笑"])] if sender else None
+    elif msg[0] in ["笑死", "xd", "XD", "XDDD", "xdxd", "🤣", "哈哈", "哈哈哈", "噗"]:
+        returnvalue = [random.choice(['你很快樂欸', "笑死", "好好笑", "超好笑"])] if is_self else None
 
-    elif msg[0] in ["？", "?", "??", "???", "？？", "？？？", "問號", "問號臉", "蛤"]:
-        returnvalue = [random.choice(['？你在問我嗎', "蛤", "虫合", "？"])] if sender else None
+    elif msg[0] in ["？", "?", "??", "???", "？？", "？？？", "問號", "問號臉", "蛤", "蛤？", "蛤蛤", "蛤蛤？", "蛤蛤蛤", "蛤蛤蛤？", "什麼", "什麼？", "什麼啦", "什麼東西", "什麼東西啊", "虫合", "虫合？", "虫合啦", "虫合東西", "虫合東西啊", "虫合東西啦", "虫合東西啊啦"]:
+        returnvalue = [random.choice(['？你在問我嗎', "蛤", "虫合", "？"])] if is_self else None
 
     elif msg[0] in ["掰", "88", "bye", "再見", "晚安"]:
-        returnvalue = ['掰掰～晚安唷～'] if sender else None
+        returnvalue = ['掰掰～晚安唷～'] if is_self else None
 
-    elif msg[0] in ["嗨", "hello", "hi", "你好"]:
-        returnvalue = [random.choice(['嗨～你來啦', "海你好", "hii", "害你好"])] if sender else None
+    elif msg[0] in ["嗨", "hello", "hi", "你好", "👋"]:
+        returnvalue = [random.choice(['嗨～你來啦', "海你好", "hii", "害你好"])] if is_self else None
 
     elif msg[0] in ["不要", "我不要", "不想", "不可以", "我拒絕", "幹不要"]:
-        returnvalue = [random.choice(['喔...（默默縮回去）\n行吧。', "好吧"])] if sender else None
+        returnvalue = [random.choice(['喔...（默默縮回去）\n行吧。', "好吧"])] if is_self else None
 
     elif msg[0] in ["你很煩", "你有病", "你閉嘴", "白癡", "87", "87了", "87你媽", "87你爸", "87你老師", "87你妹", "噁", "噁心", "噁心死了", "噁心到爆"]:
-        returnvalue = [random.choice(['你再說一次試試看（´-_ゝ-）', "在哭"])] if sender else None
+        returnvalue = [random.choice(['你再說一次試試看（´-_ゝ-）', "在哭"])] if is_self else None
 
     elif any(m in bopomofo_set for m in msg[0]):
-        returnvalue = ['你這什麼注音發言'] if sender else None
+        returnvalue = ['你這什麼注音發言'] if is_self else None
 
     elif msg[0] in ["現在幾點", "幾點", "幾點啦", "幾.", "欸幹現在幾點", "現在幾點啦", "現在幾點了", "現在幾點鐘", "現在幾點了啦"]:
         now = datetime.now().strftime("%H:%M:%S")
-        returnvalue = [f'現在是 {now} 喔'] if sender else None
+        returnvalue = [f'現在是 {now} 喔'] if is_self else None
 
     elif random.randint(0, 50) == 30:
-        returnvalue = [random.choice(['好。', "行。", "好吧。", "行吧。", "好唷。", "行唷。", "好啦。", "行啦。", "好啊。", "行啊。", "哇", "喔是喔真的假的"])] if sender else None
+        returnvalue = [random.choice([
+            '好。', "行。", "好吧。", "行吧。", "好唷。", "行唷。", "好啦。", "行啦。", "好啊。", "行啊。",
+            "哇", "喔是喔真的假的", "嗯嗯", "收到", "了解", "知道了", "OK", "O", "👌", "👍", "嗯", "喔", "噢", "哦", "好喔", "行喔",
+            "好啦好啦", "行啦行啦", "好哦", "行哦", "好耶", "行耶", "好der", "行der", "好勒", "行勒", "好捏", "行捏", "好嘛", "行嘛",
+            "好嘛好嘛", "行嘛行嘛", "好啦好啦", "行啦行啦", "嗯嗯嗯", "嗯嗯好", "嗯嗯行", "嗯嗯嗯嗯", "嗯嗯嗯嗯嗯", "嗯嗯嗯嗯嗯嗯", "好好好", "行行行"
+        ])] if is_self else None
     return returnvalue
 
 
-def savemsg(sender, senderpic, msg):
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+def savemsg(message: MessengerMessage):
+    # current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # print(f'Saving Log {sender} pic {senderpic} msg {msg} time {current_time}')
-    print(f"{sender}: {msg}")
+    print(message)
 
     try:
         with open('messagelog.json', 'r') as f:
@@ -693,22 +783,21 @@ def savemsg(sender, senderpic, msg):
     except:
         mjson = {}
         mjson['messages'] = []
-    if '已收回' in msg and '則訊息' in msg:
-        mjson['messages'][-1]['message'] = f'{mjson["messages"][-1]["message"]}（可能已收回）'
-    else:
-        mjson['messages'].append(
-            {'sender': sender, 'senderpicture': senderpic, 'message': msg, 'time': current_time})
+    # if '已收回' in msg and '則訊息' in msg:
+    #     mjson['messages'][-1]['message'] = f'{mjson["messages"][-1]["message"]}（可能已收回）'
+    # else:
+    mjson['messages'].append(message.to_dict())
 
     with open('messagelog.json', 'w') as f:
         f.write(json.dumps(mjson))
 
 
-def process_message(message, sender, reply):
+def process_message(message: MessengerMessage):
     try:
-        not_self, sender_name, sender_picture = sender
-        savemsg(sender_name, sender_picture, text)
-        if not denyuser(sender_name) and not_self:
-            msg = checkmsg(message.split(' '), not_self, sender_name, reply)
+        sender = message.sender
+        savemsg(message)
+        if not denyuser(sender.id) and sender.id != -1:
+            msg = checkmsg(message)
             if msg:
                 sendmsg(msg)
     except KeyboardInterrupt:
@@ -741,29 +830,40 @@ def get_user_id(element):
     # ActionChains(driver).key_down(Keys.ESCAPE).perform()
     try:
         button.click()
+    except KeyboardInterrupt:
+        raise KeyboardInterrupt
     except:
         pass
-    return link.split(".com/")[1].split("/")[0]
+    try:
+        return int(link.split(".com/")[1].split("/")[0])
+    except:
+        return link.split(".com/")[1].split("/")[0]
 
 
 def checksend(latestmsg):
-    global text
+    # global text
 
     def find_reply_info(replytext):
         try:
             msglog = json.load(open("messagelog.json", "r"))["messages"]
             for msg in reversed(msglog):
                 if msg["message"].strip() == replytext.strip():
-                    return msg["sender"], msg["senderpicture"]
+                    reply = MessengerMessage.from_dict(msg)
+                    return reply
         except Exception as e:
             print("Failed to open messagelog:", str(e))
-        return None, None
+        return MessengerMessage(
+            sender=MessengerUser("不知道是誰", "https://avianjay.sbs/mr.jpg", -1),
+            message=replytext,
+            reply=None
+        )
 
     xpath = '/html/body/div[1]/div/div/div/div/div[2]/div/div/div[1]/div[1]/div/div[3]/div/div/div[1]/div/div/div/div/div/div[2]/div/div/div/div[1]/div/div/div/div/div/div/div/div[position()=last()]'
     xpathtyping = '/html/body/div[1]/div/div/div/div/div[2]/div/div/div[1]/div[1]/div/div[3]/div/div/div[1]/div/div/div/div/div/div[2]/div/div/div/div[1]/div/div/div/div/div/div/div/div[position()=last()-1]'
 
     text = ""
-    replytext = replyuser = replyavatar = None
+    replytext = None
+    reply = None
 
     try:
         baseele = driver.find_element(By.XPATH, xpath)
@@ -797,29 +897,30 @@ def checksend(latestmsg):
             relep = rele.find_element(By.XPATH, "./..")
             if relep.get_attribute("role") == "presentation":
                 replytext = rele.find_element(By.CSS_SELECTOR, "div > div").text
-                replyuser, replyavatar = find_reply_info(replytext)
-                if replyavatar:
-                    replyavatar = cache_picture(replyavatar)
+                reply = find_reply_info(replytext)
             else:
                 relei = baseele.find_element(By.CSS_SELECTOR, "img[alt=原始圖像]")
                 replytext = relei.get_attribute('src')
-                replyuser, replyavatar = find_reply_info(replytext)
-                if replyavatar:
-                    replyavatar = cache_picture(replyavatar)
+                reply = find_reply_info(replytext)
         except KeyboardInterrupt:
             raise KeyboardInterrupt
         except:
             pass
 
-        reply = (replytext, replyuser, replyavatar)
+        # reply = MessengerMessage(
+        #     text=replytext,
+        #     sender=replyinfo,
+        #     reply=None
+        # )
     
     except KeyboardInterrupt:
         raise KeyboardInterrupt
     except:
         text = "無法獲取訊息"
-        reply = (None, None, None)
+        # reply_user = None
+        reply = None
 
-    not_self = True
+    # not_self = True
 
     try:
         sender_element = None
@@ -840,9 +941,11 @@ def checksend(latestmsg):
         print("Error getting sender info:", str(e))
         sender_name = "ㄐㄐ人"
         sender_picture_path = cache_picture("https://avianjay.sbs/mr.jpg")
-        not_self = False
+        userid = 0
+        # not_self = False
 
-    sender = (not_self, sender_name, sender_picture_path)
+    sender = MessengerUser(sender_name, sender_picture_path, userid)
+    message = MessengerMessage(sender, text, reply=reply)
 
     # if not latestmsg:
     #     latestmsg.append(text)
@@ -852,10 +955,10 @@ def checksend(latestmsg):
     #         if msg:
     #             sendmsg(msg)
     if text != latestmsg[-1]:
-        if text == "無法獲取訊息" and not not_self:
+        if text == "無法獲取訊息" and not message.sender.is_self():
             return latestmsg
         latestmsg.append(baseele.id)
-        threading.Thread(target=process_message, args=(text, sender, reply)).start()
+        threading.Thread(target=process_message, args=(message,)).start()
 
         # savemsg(sender_name, sender_picture_path, text)
         # if not denyuser(sender_name):
@@ -921,7 +1024,7 @@ last_used = cache("dsize", default={})
 
 def dsize(sender):
     global last_used
-    user_id = sender
+    user_id = sender.id
     now_ts = time.time()  # 現在的 timestamp
 
     # 檢查是否已使用過且未過一天
@@ -939,7 +1042,7 @@ def dsize(sender):
     size = random.randint(2, 30)
     d_string = "=" * (size - 2)
 
-    return [f"{sender} 的長度：{size}cm", f"8{d_string}D"]
+    return [f"{sender.name} 的長度：{size}cm", f"8{d_string}D"]
 
 
 def r34(tags=None, pid=1):
@@ -989,7 +1092,7 @@ def toZhuyin(string):
 
 
 if __name__ == '__main__':
-    print('Messenger Bot By AvianJay v0.89')
+    print('Messenger Bot By AvianJay v' + str(bot_version))
     latestmsg = ["FIRST_TEMP_MESSAGE"]
     driver.delete_all_cookies()
     login()
@@ -1018,7 +1121,7 @@ if __name__ == '__main__':
         task.daemon = True
         task.start()
     if config['message_log_server']:
-        server = threading.Thread(target=server.run)
+        server = threading.Thread(target=server.run, args=(config['server_port'],))
         server.daemon = True
         server.start()
     if config['sync_cookies']:
@@ -1026,8 +1129,8 @@ if __name__ == '__main__':
         sync_cookies.daemon = True
         sync_cookies.start()
     try:
-        # sendmsg(["原神，啟動！"])
-        pass
+        sendmsg(["原神，啟動！"])
+        # pass
     except:
         print("Failed to send started message.")
     while True:
