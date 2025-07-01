@@ -694,6 +694,7 @@ def checkmsg(message: MessengerMessage):
             returnvalue.append('新增userinfo指令')
             returnvalue.append('更新dsize指令')
             returnvalue.append('更新webdriver-manager')
+            returnvalue.append('現可禁止使用者使用指令')
         elif msg[0] == '!dsize':
             returnvalue = dsize(message.sender)
         elif msg[0] == '!miq':
@@ -721,6 +722,22 @@ def checkmsg(message: MessengerMessage):
                 returnvalue.append(f"名稱：{replydict['name']}")
                 returnvalue.append(f"ID：{replydict['id']}")
                 returnvalue.append(f"頭像：{config['public_url']}{replydict['avatar']}")
+        elif msg[0] == '!denyuser':
+            if reply:
+                if reply.sender.id:
+                    if not len(msg) == 2 and msg[1] == "c":
+                        denyuser(reply.sender.id, "s")
+                    seted = "禁止" if denyuser(reply.sender.id, "c") else "允許"
+                    returnvalue = [f"{reply.sender.id} 已被{seted}使用指令"]
+                else:
+                    returnvalue = ["回覆的訊息沒有使用者ID。"]
+            elif len(msg) >= 2:
+                if not len(msg) == 3 and msg[2] == "c":
+                    denyuser(msg[1], "s")
+                seted = "禁止" if denyuser(msg[1], "c") else "允許"
+                returnvalue = [f"{msg[1]} 已被{seted}使用指令"]
+            else:
+                returnvalue = ["用法：!denyuser [使用者ID/回覆的訊息]"]
         else:
             returnvalue = ["傻逼我看不懂你的指令"]
     elif msg[0].startswith("！"):
