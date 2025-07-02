@@ -1171,9 +1171,9 @@ if __name__ == '__main__':
         task.daemon = True
         task.start()
     if config['message_log_server']:
-        server = threading.Thread(target=server.run, args=(config['server_port'],))
-        server.daemon = True
-        server.start()
+        servert = threading.Thread(target=server.run, args=(config['server_port'],))
+        servert.daemon = True
+        servert.start()
     if config['sync_cookies']:
         sync_cookies = threading.Thread(target=sync_cookies)
         sync_cookies.daemon = True
