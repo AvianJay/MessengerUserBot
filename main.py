@@ -777,38 +777,38 @@ def checkmsg(message: MessengerMessage):
         returnvalue = ['用半形!傻逼']
     # lol autoreply
     elif msg[0].lower() in ["好", "好。", "cl3", "👌", "👍", "。"]:
-        returnvalue = ['好。'] if is_self else None
+        returnvalue = ['好。'] if not is_self else None
     elif msg[0].lower() in ["好你嗎", "好你媽", "好三小", "好你媽啦", "好你碼", "好你妹", "好你老師", "好你爸", "好你爸啦", "好你媽啦", "好你妹啦", "好你老師啦", "好你碼啦", "行你媽", "行你嗎", "行三小", "行你媽啦", "行你碼", "行你妹", "行你老師", "行你爸", "行你爸啦", "行你媽啦", "行你妹啦", "行你老師啦", "行你碼啦", "哭三小", "哭你媽", "哭你嗎", "哭你妹", "哭你老師", "哭你爸", "哭你媽啦", "哭你妹啦", "哭你老師啦", "哭你爸啦"]:
-        returnvalue = ['我做錯了嗎(⁠´⁠；⁠ω⁠；⁠｀⁠)'] if is_self else None
+        returnvalue = ['我做錯了嗎(⁠´⁠；⁠ω⁠；⁠｀⁠)'] if not is_self else None
     elif msg[0].lower() in ["行", "說幹就幹", "好吧", "vu/6", "vu/", "vu/6行", "vu/6好吧", "vu/6說幹就幹", "行吧", "行。", "行了", "行了嗎", "行了嗎？"]:
-        returnvalue = ['行吧。'] if is_self else None
+        returnvalue = ['行吧。'] if not is_self else None
     elif msg[0].lower() in ["幹", "乾", "靠北", "靠杯", "操", "呃", "崩潰", "fk", "fuck", "fucking", "fucking hell", "fucking", "e04", "靠北啊", "靠北阿", "靠杯啊", "靠杯阿", "媽的", "媽的啊", "媽的阿", "媽的啦", "媽的啦啊", "媽的啦阿", "媽的啦啊阿", "媽的啦啊阿啊", "幹你娘", "幹你娘啊", "幹你娘阿", "幹你娘啦", "幹你娘啦啊", "幹你娘啦阿", "幹你娘啦啊阿", "幹你娘啦啊阿啊", "幹你娘啦啊阿啊啊", "幹你娘啦啊阿啊啊啊", "幹你娘啦啊阿啊啊啊啊", "幹你娘啦啊阿啊啊啊啊啊", "幹你娘啦啊阿啊啊啊啊啊啊", "幹你娘啦啊阿啊啊啊啊啊阿", "幹你娘啦啊阿啊啊啊啊阿", "幹你娘啦阿", "操你媽", "操你媽啊", "操你媽阿", "操你媽啦", "操你媽啦啊", "操你媽啦阿", "操你媽啦啊阿", "操你媽啦啊阿啊", "操你媽啦啊阿啊啊", "操你媽啦啊阿啊啊啊", "操你媽啦啊阿啊啊啊啊", "操你媽啦啊阿啊啊啊啊啊", "操你媽啦啊阿啊啊啊啊阿", "操你媽啦啊阿啊啊啊阿", "操你媽啦阿", "操你媽啦啊", "操你媽啦啊阿", "操你媽啦啊阿啊", "操你媽啦啊阿啊啊", "操你媽啦啊阿啊啊啊", "操你媽啦啊阿啊啊啊啊", "操你媽啦啊阿啊啊啊啊阿", "操你媽啦啊阿啊啊啊阿"]:
         returnvalue = [random.choice(['你壞壞 不可以這樣', "我要跟老師講", "到底 都你在搞", "就你在搞", "就{random}在搞", "在哭", "。", "好啦好啦"])] if is_self else None
 
     elif msg[0] in ["笑死", "xd", "XD", "XDDD", "xdxd", "🤣", "哈哈", "哈哈哈", "噗"]:
-        returnvalue = [random.choice(['你很快樂欸', "笑死", "好好笑", "超好笑"])] if is_self else None
+        returnvalue = [random.choice(['你很快樂欸', "笑死", "好好笑", "超好笑"])] if not is_self else None
 
     elif msg[0] in ["？", "?", "??", "???", "？？", "？？？", "問號", "問號臉", "蛤", "蛤？", "蛤蛤", "蛤蛤？", "蛤蛤蛤", "蛤蛤蛤？", "什麼", "什麼？", "什麼啦", "什麼東西", "什麼東西啊", "虫合", "虫合？", "虫合啦", "虫合東西", "虫合東西啊", "虫合東西啦", "虫合東西啊啦"]:
-        returnvalue = [random.choice(['？你在問我嗎', "蛤", "虫合", "？"])] if is_self else None
+        returnvalue = [random.choice(['？你在問我嗎', "蛤", "虫合", "？"])] if not is_self else None
 
     elif msg[0] in ["掰", "88", "bye", "再見", "晚安"]:
-        returnvalue = ['掰掰～晚安唷～'] if is_self else None
+        returnvalue = ['掰掰～晚安唷～'] if not is_self else None
 
     elif msg[0] in ["嗨", "hello", "hi", "你好", "👋"]:
-        returnvalue = [random.choice(['嗨～你來啦', "海你好", "hii", "害你好"])] if is_self else None
+        returnvalue = [random.choice(['嗨～你來啦', "海你好", "hii", "害你好"])] if not is_self else None
 
     elif msg[0] in ["不要", "我不要", "不想", "不可以", "我拒絕", "幹不要"]:
-        returnvalue = [random.choice(['喔...（默默縮回去）\n行吧。', "好吧"])] if is_self else None
+        returnvalue = [random.choice(['喔...（默默縮回去）\n行吧。', "好吧"])] if not is_self else None
 
     elif msg[0] in ["你很煩", "你有病", "你閉嘴", "白癡", "87", "87了", "87你媽", "87你爸", "87你老師", "87你妹", "噁", "噁心", "噁心死了", "噁心到爆"]:
-        returnvalue = [random.choice(['你再說一次試試看（´-_ゝ-）', "在哭"])] if is_self else None
+        returnvalue = [random.choice(['你再說一次試試看（´-_ゝ-）', "在哭"])] if not is_self else None
 
     elif any(m in bopomofo_set for m in msg[0]):
-        returnvalue = ['你這什麼注音發言'] if is_self else None
+        returnvalue = ['你這什麼注音發言'] if not is_self else None
 
     elif msg[0] in ["現在幾點", "幾點", "幾點啦", "幾.", "欸幹現在幾點", "現在幾點啦", "現在幾點了", "現在幾點鐘", "現在幾點了啦"]:
         now = datetime.now().strftime("%H:%M:%S")
-        returnvalue = [f'現在是 {now} 喔'] if is_self else None
+        returnvalue = [f'現在是 {now} 喔'] if not is_self else None
 
     elif random.randint(0, 50) == 30:
         returnvalue = [random.choice([
@@ -816,7 +816,7 @@ def checkmsg(message: MessengerMessage):
             "哇", "喔是喔真的假的", "嗯嗯", "收到", "了解", "知道了", "OK", "O", "👌", "👍", "嗯", "喔", "噢", "哦", "好喔", "行喔",
             "好啦好啦", "行啦行啦", "好哦", "行哦", "好耶", "行耶", "好der", "行der", "好勒", "行勒", "好捏", "行捏", "好嘛", "行嘛",
             "好嘛好嘛", "行嘛行嘛", "好啦好啦", "行啦行啦", "嗯嗯嗯", "嗯嗯好", "嗯嗯行", "嗯嗯嗯嗯", "嗯嗯嗯嗯嗯", "嗯嗯嗯嗯嗯嗯", "好好好", "行行行"
-        ])] if is_self else None
+        ])] if not is_self else None
     return returnvalue
 
 
