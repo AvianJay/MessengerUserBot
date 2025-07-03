@@ -766,7 +766,7 @@ def checkmsg(message: MessengerMessage):
             else:
                 returnvalue = ["你沒有權限使用這個指令。"]
         elif msg[0] == '!webhook':
-            webhook_url = config.get("public_url", "http://example.com:3000/") + server.secret
+            webhook_url = config.get("public_url", "http://example.com:3000/") + "webhook/" + server.secret
             returnvalue = [f"Webhook URL: {webhook_url}"]
             returnvalue.append("支持的Webhook類型：")
             returnvalue.append("discord, slack, github")
