@@ -25,7 +25,7 @@ from g4f.client import Client
 gptClient = Client()
 
 config_version = 6
-bot_version = "0.9 Beta"
+bot_version = "0.91 Beta"
 
 qwerty_to_bopomofo = {
     # 聲母/韻母（符號區）
@@ -152,7 +152,7 @@ class MessengerMessage(object):
         self.reply = reply
 
     def __str__(self):
-        reply_str = f" (reply to {self.reply.sender})" if self.reply else ""
+        reply_str = f" (reply to {self.reply.sender} : {self.reply.message})" if self.reply else ""
         return f"{self.sender} : {self.message} at {self.time}{reply_str}"
 
     def __repr__(self):
@@ -617,30 +617,16 @@ def checkmsg(message: MessengerMessage):
             else:
                 returnvalue = ['用法：!gethleans [題目ID]']
         elif msg[0] == '!gpt':
-            if len(msg) == 2:
-                returnvalue = []
-                returnvalue = gpt(msg[1]).split("\n")
-            elif len(msg) > 2:
-                c = None
-                returnvalue = []
-                del msg[0]
-                gpttxt = " ".join(msg)
-                returnvalue = gpt(gpttxt).split("\n")
+            if len(msg) >= 2:
+                returnvalue = gpt(message).split("\n")
             else:
                 returnvalue = ['用法：!gpt [**文字]']
         elif msg[0] == '!gptclean':
             gptClean()
             returnvalue = ['成功清除記憶。']
         elif msg[0] == '!gptsearch':
-            if len(msg) == 2:
-                returnvalue = []
-                returnvalue = gpt(msg[1], search=True).split("\n")
-            elif len(msg) > 2:
-                c = None
-                returnvalue = []
-                del msg[0]
-                gpttxt = " ".join(msg)
-                returnvalue = gpt(gpttxt, search=True).split("\n")
+            if len(msg) >= 2:
+                returnvalue = gpt(message, search=True).split("\n")
             else:
                 returnvalue = ['用法：!gptsearch [**文字]']
         elif msg[0] == '!gptimage':
@@ -702,15 +688,11 @@ def checkmsg(message: MessengerMessage):
             returnvalue.append('Messenger Bot v' + str(bot_version))
             returnvalue.append('by AvianJay')
             returnvalue.append('本次更新：')
-            returnvalue.append('AutoReply更新')
-            returnvalue.append('更多敷衍')
-            returnvalue.append('資料處理更新')
-            returnvalue.append('新增userinfo指令')
-            returnvalue.append('更新dsize指令')
-            returnvalue.append('更新webdriver-manager')
-            returnvalue.append('現可禁止使用者使用指令')
-            returnvalue.append('現可使用指令關閉機器人')
-            returnvalue.append('現可限制成人內容')
+            # returnvalue.append('AutoReply更新')
+            # returnvalue.append('更多敷衍')
+            returnvalue.append('修復dsize指令')
+            returnvalue.append('修復2zhuyin指令')
+            returnvalue.append('更新gpt指令 會傳送回覆的訊息')
         elif msg[0] == '!dsize':
             returnvalue = dsize(message.sender)
         elif msg[0] == '!miq':
@@ -721,9 +703,10 @@ def checkmsg(message: MessengerMessage):
                 returnvalue = ["找不到已回覆的訊息。"]
         elif msg[0] == '!2zhuyin':
             if reply[0]:
-                returnvalue = toZhuyin(reply[0])
+                returnvalue = toZhuyin(message.reply.message)
             elif len(msg) > 1:
-                returnvalue = toZhuyin(msg[1])
+                del msg[0]
+                returnvalue = toZhuyin(" ".join(msg))
             else:
                 returnvalue = ["傻逼沒東西"]
         elif msg[0] == '!userinfo':
@@ -1038,13 +1021,21 @@ def searchans(q):
             finded.append(f)
     return finded
 
-messages = [{"role": "system", "content": "你是一個文字助理，回答會被貼到 Messenger，請勿使用 Markdown，例如星號粗體、井號標題、反引號等，請用純文字格式回答。"}]
+messages = [{"role": "system", "content": "你是一個文字助理，回答會被貼到 Messenger，若有回覆的訊息會在前面加上括號，請勿使用 Markdown，例如星號粗體、井號標題、反引號等，請用純文字格式回答。"}]
 
-def gpt(text, search=False):
+def gpt(message, search=False):
     global messages
-    print("GPT Message:", text)
+    print("GPT Message:", message.message)
     sendmsg(["等一下..."])
-    messages.append({"role": "user", "content": text})
+    # 組合內容：如果有回覆，附上回覆對象與內容
+    if message.reply:
+        user_content = (
+            f"（回覆 {message.reply.sender.name} 說：「{message.reply.message}」）\n"
+            f"{message.sender.name}：{message.message}"
+        )
+    else:
+        user_content = f"{message.sender.name}：{message.message}"
+    messages.append({"role": "user", "content": user_content})
     response = gptClient.chat.completions.create(
         model="gpt-4o",
         messages=messages,
@@ -1057,7 +1048,7 @@ def gpt(text, search=False):
 
 def gptClean():
     global messages
-    messages = [{"role": "system", "content": "你是一個文字助理，回答會被貼到 Messenger，請勿使用 Markdown，例如星號粗體、井號標題、反引號等，請用純文字格式回答。"}]
+    messages = [{"role": "system", "content": "你是一個文字助理，回答會被貼到 Messenger，若有回覆的訊息會在前面加上括號，請勿使用 Markdown，例如星號粗體、井號標題、反引號等，請用純文字格式回答。"}]
 
 
 def gptImage(prompt):
@@ -1074,7 +1065,7 @@ last_used = cache("dsize", default={})
 
 def dsize(sender):
     global last_used
-    user_id = sender.id
+    user_id = str(sender.id)
     now_ts = time.time()  # 現在的 timestamp
 
     # 檢查是否已使用過且未過一天
