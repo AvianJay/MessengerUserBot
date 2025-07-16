@@ -838,7 +838,7 @@ def send_message_event(message: MessengerMessage):
 
 def process_message(message: MessengerMessage):
     try:
-        threading.Thread(target=send_message_event, args=(message,))
+        threading.Thread(target=send_message_event, args=(message,), daemon=True).start()
         sender = message.sender
         savemsg(message)
         if not denyuser(sender.id) and sender.id != -1:
