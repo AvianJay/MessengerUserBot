@@ -1,12 +1,19 @@
 from flask import Flask
 from flask import render_template, request, send_file, jsonify
 import os
+import sys
 import random
 import string
 
+# sendmsg function
 sendmsg = None
 
-app = Flask(__name__)
+if getattr(sys, 'frozen', False):
+    template_folder = os.path.join(sys._MEIPASS, 'templates')
+    static_folder = os.path.join(sys._MEIPASS, 'static')
+    app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
+else:
+    app = Flask(__name__)
 
 if os.path.exists(".webhook.secret"):
     secret = open(".webhook.secret", "r").read()
