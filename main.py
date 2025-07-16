@@ -24,8 +24,8 @@ import hashlib
 from g4f.client import Client
 gptClient = Client()
 
-config_version = 6
-bot_version = "0.91 Beta"
+config_version = 7
+bot_version = "0.92 Beta"
 
 qwerty_to_bopomofo = {
     # 聲母/韻母（符號區）
@@ -64,6 +64,7 @@ default_config = {
     "use_wdm": True,
     "server_port": 3000,
     "adult_content": False,
+    "message_event": "",
 }
 config_path = "config.json"
 config = None
@@ -693,6 +694,7 @@ def checkmsg(message: MessengerMessage):
             returnvalue.append('修復dsize指令')
             returnvalue.append('修復2zhuyin指令')
             returnvalue.append('更新gpt指令 會傳送回覆的訊息')
+            returnvalue.append('提供傳送訊息事件的選項')
         elif msg[0] == '!dsize':
             returnvalue = dsize(message.sender)
         elif msg[0] == '!miq':
@@ -825,8 +827,18 @@ def savemsg(message: MessengerMessage):
         f.write(json.dumps(mjson))
 
 
+def send_message_event(message: MessengerMessage):
+    if not config.get("message_event"): return
+    try:
+        requests.post(config.get("message_event"), json=message.to_dict())
+    except Exception as e:
+        print("Cannot send message event:", str(e))
+    return
+
+
 def process_message(message: MessengerMessage):
     try:
+        threading.Thread(target=send_message_event, args=(message,))
         sender = message.sender
         savemsg(message)
         if not denyuser(sender.id) and sender.id != -1:
