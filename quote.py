@@ -1,5 +1,12 @@
 from PIL import Image, ImageDraw, ImageFont
 import requests
+import os
+import sys
+
+if getattr(sys, 'frozen', False):
+    fontdir = sys._MEIPASS
+else:
+    fontdir = "."
 
 def create(url, message, name):
     # load avatar
@@ -34,8 +41,8 @@ def create(url, message, name):
     draw.rectangle([540, 0, 700, 300], fill="black")
 
     # font
-    font_msg = ImageFont.truetype("notobold.ttf", 55)
-    font_name = ImageFont.truetype("notolight.ttf", 25)
+    font_msg = ImageFont.truetype(os.path.join(fontdir, "notobold.ttf"), 55)
+    font_name = ImageFont.truetype(os.path.join(fontdir, "notolight.ttf"), 25)
 
     # msg
     # message = "好。"
