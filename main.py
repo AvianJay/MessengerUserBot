@@ -25,7 +25,7 @@ from g4f.client import Client
 gptClient = Client()
 
 config_version = 7
-bot_version = "0.92 Beta"
+bot_version = "0.93 Beta"
 
 qwerty_to_bopomofo = {
     # 聲母/韻母（符號區）
@@ -689,8 +689,8 @@ def checkmsg(message: MessengerMessage):
             returnvalue.append('Messenger Bot v' + str(bot_version))
             returnvalue.append('by AvianJay')
             returnvalue.append('本次更新：')
-            # returnvalue.append('AutoReply更新')
-            # returnvalue.append('更多敷衍')
+            returnvalue.append('AutoReply更新')
+            returnvalue.append('更多敷衍')
             returnvalue.append('修復dsize指令')
             returnvalue.append('修復2zhuyin指令')
             returnvalue.append('更新gpt指令 會傳送回覆的訊息')
@@ -795,12 +795,19 @@ def checkmsg(message: MessengerMessage):
         now = datetime.now().strftime("%H:%M:%S")
         returnvalue = [f'現在是 {now} 喔'] if not is_self else None
 
+    elif any(word in message.message for word in ["再哪", "再這", "再不再", "再嗎", "再嘛", "再呢", "再乎", "再意", "他不再"]):
+        returnvalue = ["在啦幹"]
+    
+    elif any(word in message.message for word in ["在一", "在次", "在給", "在來"]):
+        returnvalue = ["再啦幹"]
+
     elif random.randint(0, 50) == 30:
         returnvalue = [random.choice([
             '好。', "行。", "好吧。", "行吧。", "好唷。", "行唷。", "好啦。", "行啦。", "好啊。", "行啊。",
-            "哇", "喔是喔真的假的", "嗯嗯", "收到", "了解", "知道了", "OK", "O", "👌", "👍", "嗯", "喔", "噢", "哦", "好喔", "行喔",
+            "哇", "喔是喔真的假的", "嗯嗯", "收到", "了解", "知道了", "OK", "O", "(y)", "嗯", "喔", "噢", "哦", "好喔", "行喔",
             "好啦好啦", "行啦行啦", "好哦", "行哦", "好耶", "行耶", "好der", "行der", "好勒", "行勒", "好捏", "行捏", "好嘛", "行嘛",
-            "好嘛好嘛", "行嘛行嘛", "好啦好啦", "行啦行啦", "嗯嗯嗯", "嗯嗯好", "嗯嗯行", "嗯嗯嗯嗯", "嗯嗯嗯嗯嗯", "嗯嗯嗯嗯嗯嗯", "好好好", "行行行"
+            "好嘛好嘛", "行嘛行嘛", "好啦好啦", "行啦行啦", "嗯嗯嗯", "嗯嗯好", "嗯嗯行", "嗯嗯嗯嗯", "嗯嗯嗯嗯嗯", "嗯嗯嗯嗯嗯嗯", "好好好", "行行行",
+            "嗯\n好。", "喔\n好。", "嗯\n行吧。", "喔\n行吧。", "嗯\n好喔", "喔\n好喔", "喔好喔", "哇真的假的"
         ])] if not is_self else None
     return returnvalue
 
