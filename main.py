@@ -798,7 +798,7 @@ def checkmsg(message: MessengerMessage):
     elif any(word in message.message for word in ["再哪", "再這", "再不再", "再嗎", "再嘛", "再呢", "再乎", "再意"]):
         returnvalue = ["在啦幹"]
     
-    elif any(word in message.message for word in ["在一", "在次", "在給", "在來", "在不去"]):
+    elif any(word in message.message for word in ["在一", "在次", "在給", "在來", "在不去", "在見"]):
         returnvalue = ["再啦幹"]
 
     elif random.randint(0, 50) == 30:
