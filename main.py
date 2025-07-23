@@ -795,10 +795,10 @@ def checkmsg(message: MessengerMessage):
         now = datetime.now().strftime("%H:%M:%S")
         returnvalue = [f'現在是 {now} 喔'] if not is_self else None
 
-    elif any(word in message.message for word in ["再哪", "再這", "再不再", "再嗎", "再嘛", "再呢", "再乎", "再意", "他不再"]):
+    elif any(word in message.message for word in ["再哪", "再這", "再不再", "再嗎", "再嘛", "再呢", "再乎", "再意"]):
         returnvalue = ["在啦幹"]
     
-    elif any(word in message.message for word in ["在一", "在次", "在給", "在來"]):
+    elif any(word in message.message for word in ["在一", "在次", "在給", "在來", "在不去"]):
         returnvalue = ["再啦幹"]
 
     elif random.randint(0, 50) == 30:
