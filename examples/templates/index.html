@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Messenger聊天記錄</title>
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1.0">
+</head>
+
+<body>
+  <div id="messageContainer"></div>
+
+  <script>
+    function objLength(obj) {
+      var i = 0;
+      for (var x in obj) {
+        if (obj.hasOwnProperty(x)) {
+          i++;
+        }
+      }
+      return i;
+    }
+    function isImageURL(url) {
+      if (url.includes("fbcdn.net")) {
+        return true
+      } else {
+        return false;
+      };
+    }
+
+    fetch('/messagelog.json')
+      .then(response => response.json())
+      .then(data => {
+        const messageContainer = document.getElementById('messageContainer');
+
+        let previousDateTime = null;
+
+        for (let i = 0; i < objLength(data.messages); i++) {
+          const message = data.messages[i];
+          const sender = message.sender.name;
+          const senderPicture = message.sender.avatar;
+          const messageText = message.message;
+          const time = new Date(message.time * 1000);
+
+          const messageElement = document.createElement('div');
+          messageElement.classList.add('message');
+          messageContainer.appendChild(messageElement);
+
+          // Display time if it's different from the previous message
+          if (!previousDateTime || !isSameDate(previousDateTime, time) || !isSameHour(previousDateTime, time)) {
+            const timeElement = document.createElement('p');
+            timeElement.classList.add('time');
+            timeElement.textContent = formatTime(time);
+            messageContainer.appendChild(timeElement);
+            previousDateTime = time;
+          }
+
+          const senderPictureElement = document.createElement('img');
+          senderPictureElement.classList.add('sender-picture');
+          senderPictureElement.src = senderPicture;
+          messageElement.appendChild(senderPictureElement);
+
+          const senderElement = document.createElement('p');
+          senderElement.classList.add('sender');
+          senderElement.textContent = sender;
+          messageElement.appendChild(senderElement);
+
+
+          image = isImageURL(messageText);
+
+          if (image) {
+            const messageImageElement = document.createElement('img');
+            messageImageElement.classList.add('message-image');
+            messageImageElement.src = messageText;
+            messageElement.appendChild(messageImageElement);
+          } else {
+            const messageTextElement = document.createElement('p');
+            messageTextElement.classList.add('message-text');
+            messageTextElement.textContent = messageText;
+            messageElement.appendChild(messageTextElement);
+          }
+        }
+        window.scrollTo(0, document.body.scrollHeight);
+      })
+      .catch(error => {
+        console.log('Error:', error);
+      });
+
+    function isSameDate(date1, date2) {
+      return (
+        date1.getFullYear() === date2.getFullYear() &&
+        date1.getMonth() === date2.getMonth() &&
+        date1.getDate() === date2.getDate()
+      );
+    }
+
+    function isSameHour(date1, date2) {
+      return date1.getHours() === date2.getHours();
+    }
+
+    function formatTime(date) {
+      const currentDateTime = new Date();
+      const minuteDifference = Math.abs(currentDateTime.getMinutes() - date.getMinutes());
+
+      let format = '';
+      if (date.getFullYear() !== currentDateTime.getFullYear()) {
+        format = '%m-%d %H:%M';
+      } else if (date.getMonth() !== currentDateTime.getMonth() || date.getDate() !== currentDateTime.getDate()) {
+        format = '%Y-%m-%d %H:%M';
+      } else if (minuteDifference >= 5) {
+        format = '%H:%M';
+      }
+
+      return format.replace(/%Y/g, date.getFullYear())
+        .replace(/%m/g, padZero(date.getMonth() + 1))
+        .replace(/%d/g, padZero(date.getDate()))
+        .replace(/%H/g, padZero(date.getHours()))
+        .replace(/%M/g, padZero(date.getMinutes()));
+    }
+
+    function padZero(number) {
+      return number.toString().padStart(2, '0');
+    }
+
+
+  </script>
+  <style>
+    .message {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .sender {
+      margin-right: 10px;
+      font-weight: bold;
+    }
+
+    .sender-picture {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+
+    .message-text {
+      flex-grow: 1;
+      word-break: break-word;
+      /* 自動換行 */
+    }
+
+    .message-image {
+      display: block;
+      width: 50%;
+      height: auto;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column-reverse;
+      /* 開始畫面置於最下方 */
+      min-height: 100vh;
+      background-color: lightblue;
+    }
+
+    .time {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  </style>
+</body>
+
+</html>
