@@ -1,0 +1,16 @@
+{
+  "email": "your_email@example.com",
+  "password": "your_password",
+  "thread_id": "123456789",
+  "headless": false,
+  "use_wdm": true,
+  "check_pagamo": false,
+  "message_log_server": false,
+  "server_port": 3000,
+  "sync_cookies": false,
+  "sync_cookies_duration": 5,
+  "owner_id": 0,
+  "public_url": "http://example.com:3000/",
+  "adult_content": false,
+  "message_event": ""
+}
