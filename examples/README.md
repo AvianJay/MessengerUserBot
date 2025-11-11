@@ -18,6 +18,21 @@ cd examples
 python simple_bot.py
 ```
 
+### `advanced_bot.py`
+An example using the extensions module with decorators for cleaner code.
+
+**Features:**
+- Command decorator (@command)
+- Cooldown decorator (@cooldown)
+- Owner-only commands (@requires_owner)
+- Modular command structure
+
+**Usage:**
+```bash
+cd examples
+python advanced_bot.py
+```
+
 ### `bot_example.py`
 The original full-featured bot with all commands and features.
 
@@ -51,12 +66,14 @@ nano config.json  # Edit with your credentials
 ```bash
 python simple_bot.py
 # or
+python advanced_bot.py
+# or
 python bot_example.py
 ```
 
 ## Creating Your Own Bot
 
-Here's a minimal example:
+### Basic Example
 
 ```python
 from messenger_userbot import MessengerBot
@@ -74,6 +91,36 @@ def handle_message(message):
     
     if '!ping' in message.message:
         bot.send_message(['Pong!'])
+
+bot.login()
+bot.run()
+```
+
+### Advanced Example with Decorators
+
+```python
+from messenger_userbot import MessengerBot, command, cooldown
+
+bot = MessengerBot(config=config)
+
+@command()
+def hello(bot, message, args):
+    bot.send_message([f'Hello {message.sender.name}!'])
+
+@command()
+@cooldown(60)
+def limited(bot, message, args):
+    bot.send_message(['This has a 60 second cooldown!'])
+
+commands = [hello, limited]
+
+@bot.on_message
+def handle(message):
+    if message.sender.is_self():
+        return
+    for cmd in commands:
+        if cmd.check_and_execute(bot, message):
+            return
 
 bot.login()
 bot.run()
