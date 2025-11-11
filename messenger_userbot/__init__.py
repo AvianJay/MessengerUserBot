@@ -6,5 +6,6 @@ __version__ = "1.0.0"
 
 from .models import MessengerUser, MessengerMessage
 from .client import MessengerBot
+from .extensions import command, requires_owner, cooldown
 
-__all__ = ['MessengerBot', 'MessengerUser', 'MessengerMessage']
+__all__ = ['MessengerBot', 'MessengerUser', 'MessengerMessage', 'command', 'requires_owner', 'cooldown']

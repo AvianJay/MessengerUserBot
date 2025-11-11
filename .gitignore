@@ -209,3 +209,17 @@ picture_caches/
 # g4f
 har_and_cookies/
 generated_media/
+
+# examples generated files
+examples/config.json
+examples/cookies.pkl
+examples/cookies_facebook.pkl
+examples/.webhook.secret
+examples/messagelog.json
+examples/Quote_Temp_Download.jpg
+examples/.cache.json
+examples/HanlinQT.html
+examples/HanlinQT.json
+examples/ErrorQuestions.json
+examples/messenger_quote.png
+examples/picture_caches/
